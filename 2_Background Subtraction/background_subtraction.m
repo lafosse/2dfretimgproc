@@ -33,17 +33,17 @@ while 1
         rg = cell2mat(textscan(tokens2{1}{1}, '%d %d %d %d', 'delimiter', ','));
         X1 = bg(1);
         Y1 = bg(2);
-        W1 = bg(3);
-        H1 = bg(4);
+        W1 = bg(3)-1;
+        H1 = bg(4)-1;
         X2 = rg(1);
         Y2 = rg(2);
-        W2 = rg(3);
-        H2 = rg(4);
+        W2 = rg(3)-1;
+        H2 = rg(4)-1;
         fclose(fid);
         break
     else
-        disp('No "region_boxes.txt" file found in path...\n');
-        yn = input('Relaunch Background Subtraction GUI to calculate regions? (y/n)\n','s');
+        disp('No "region_boxes.txt" file found in path...');
+        yn = input('Relaunch Background Subtraction GUI to calculate regions? (y/n)','s');
         if ~strcmp(yn,'y')
             error('Script needs "region_boxes.txt" to continue processing. Exiting script...');
         end
@@ -103,11 +103,11 @@ loop = 6;       % number of subsection of frames
 view_fig = 0;   % to view figures set to 1. 
 
 % set number of sub-sections to process sub-total number of frames in '.tif' stack
-if num_images <= loop
+if num_images <= 3*loop
     num_images_sub = num_images;
     loop = 1;
 else
-    num_images_sub = round(num_images/loop);
+    num_images_sub = floor(num_images/loop);
 end
 
 for i = 1:loop

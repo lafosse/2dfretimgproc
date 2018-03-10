@@ -93,13 +93,14 @@ if exist('img_data.mat','file') == 2
                 file_donor_dark = imgs.donor_dark;
                 file_acceptor_dark = imgs.acceptor_dark;
 
-                acceptor_dark  = imread(file_acceptor_dark);
                 donor_dark     = imread(file_donor_dark);
-
-                donor_shade = donor_shade - donor_dark;
-                fret_shade = fret_shade - acceptor_dark;
+                acceptor_dark  = imread(file_acceptor_dark);
+                
+                donor_shade = uint16(bsxfun(@minus, double(donor_shade), double(donor_dark)));
+                fret_shade = uint16(bsxfun(@minus, double(fret_shade), double(acceptor_dark)));
+                
                 if svd == 2
-                    acceptor_shade = acceptor_shade - acceptor_dark;
+                    acceptor_shade = uint16(bsxfun(@minus, double(acceptor_shade), double(acceptor_dark)));
                 end
             end
 
@@ -164,13 +165,14 @@ if exist('img_data.mat','file') == 2
                 imgs.donor_dark = file_donor_dark;
                 imgs.acceptor_dark = file_acceptor_dark;
 
-                acceptor_dark  = imread(file_acceptor_dark);
                 donor_dark     = imread(file_donor_dark);
-
-                donor_shade = donor_shade - donor_dark;
-                fret_shade = fret_shade - acceptor_dark;
+                acceptor_dark  = imread(file_acceptor_dark);
+                
+                donor_shade = uint16(bsxfun(@minus, double(donor_shade), double(donor_dark)));
+                fret_shade = uint16(bsxfun(@minus, double(fret_shade), double(acceptor_dark)));
+                
                 if svd == 2
-                    acceptor_shade = acceptor_shade - acceptor_dark;
+                    acceptor_shade = uint16(bsxfun(@minus, double(acceptor_shade), double(acceptor_dark)));
                 end
             end
 
@@ -239,13 +241,14 @@ else
         imgs.donor_dark = file_donor_dark;
         imgs.acceptor_dark = file_acceptor_dark;
 
-        acceptor_dark  = imread(file_acceptor_dark);
         donor_dark     = imread(file_donor_dark);
+        acceptor_dark  = imread(file_acceptor_dark);
 
-        donor_shade = donor_shade - donor_dark;
-        fret_shade = fret_shade - acceptor_dark;
+        donor_shade = uint16(bsxfun(@minus, double(donor_shade), double(donor_dark)));
+        fret_shade = uint16(bsxfun(@minus, double(fret_shade), double(acceptor_dark)));
+
         if svd == 2
-            acceptor_shade = acceptor_shade - acceptor_dark;
+            acceptor_shade = uint16(bsxfun(@minus, double(acceptor_shade), double(acceptor_dark)));
         end
     end
 
@@ -295,11 +298,11 @@ end
 loop = 9;       % number of subsection of frames
 
 % set number of sub-sections to process sub-total number of frames in '.tif' stack
-if num_images <= loop
+if num_images <= 3*loop
     num_images_sub = num_images;
     loop = 1;
 else
-    num_images_sub = round(num_images/loop);
+    num_images_sub = floor(num_images/loop);
 end
 
 for i = 1:loop
@@ -322,8 +325,8 @@ for i = 1:loop
 
     % Apply Dark Current Correction to Donor and FRET
     if dark_current == 1
-        donor = bsxfun(@minus, donor, donor_dark);
-        FRET = bsxfun(@minus, FRET, acceptor_dark);
+        donor = uint16(bsxfun(@minus, donor, donor_dark));
+        FRET = uint16(bsxfun(@minus, FRET, acceptor_dark));
     end
 
     % Apply the Transformation to the Donor Image
@@ -336,20 +339,28 @@ for i = 1:loop
 
     % Write Donor and FRET to '.tif' files
     for j = 1:length(ind)
-%         imwrite(donor(:,:,j), 'donor.tif', 'Compression', 'none', 'WriteMode', 'append')  % the raw donor images (donor excitation & emission)
+        imwrite(donor(:,:,j), 'donor.tif', 'Compression', 'none', 'WriteMode', 'append')  % the raw donor images (donor excitation & emission)
         if transform == 1
             imwrite(donor_transformed(:,:,j),  'donor_transformed.tif',  'Compression', 'none', 'WriteMode', 'append')  % the transformed donor images (donor excitation & emission)
         end
-%         imwrite(FRET(:,:,j), 'fret.tif', 'Compression', 'none', 'WriteMode', 'append')  % the FRET images (donor excitation, acceptor emission)
+        imwrite(FRET(:,:,j), 'fret.tif', 'Compression', 'none', 'WriteMode', 'append')  % the FRET images (donor excitation, acceptor emission)
     end
 
     % Apply the Normalized Shade Correction to Donor and FRET
     if transform == 1
-        donor_sc = uint16(bsxfun(@rdivide, double(donor_transformed), donor_shade_norm));
+        donor_sc = bsxfun(@rdivide, double(donor_transformed), donor_shade_norm);
     else
-        donor_sc = uint16(bsxfun(@rdivide, double(donor), donor_shade_norm));
+        donor_sc = bsxfun(@rdivide, double(donor), donor_shade_norm);
     end
-    FRET_sc = uint16(bsxfun(@rdivide, double(FRET), fret_shade_norm));
+    FRET_sc = bsxfun(@rdivide, double(FRET), fret_shade_norm);
+    
+    % if shade correction image pixel value is 0 (i.e. no reliable signal in pixel)
+    % then "kill" pixel by setiing infinite values in shade corrected image
+    % (value/0) to 0
+    donor_sc(isinf(donor_sc)) = 0;
+    donor_sc = uint16(donor_sc);
+    FRET_sc(isinf(FRET_sc)) = 0;
+    FRET_sc = uint16(FRET_sc);
 
     % Clear Unnecessary Variables
     donor(:,:,2:end) = [];
@@ -389,12 +400,18 @@ for i = 1:loop
         end
 
         % Write Acceptor to '.tif' file
-%         for j = 1:length(ind)
-%             imwrite(acceptor(:,:,j),  'acceptor.tif',  'Compression', 'none', 'WriteMode', 'append') % the acceptor images (acceptor excitation, acceptor emission)
-%         end
+        for j = 1:length(ind)
+            imwrite(acceptor(:,:,j),  'acceptor.tif',  'Compression', 'none', 'WriteMode', 'append') % the acceptor images (acceptor excitation, acceptor emission)
+        end
 
         % Apply the Normalized Shade Correction to Acceptor Image
         acceptor_sc = uint16(bsxfun(@rdivide, double(acceptor), acceptor_shade_norm));
+        
+        % if shade correction image pixel value is 0 (i.e. no reliable signal in pixel)
+        % then "kill" pixel by setiing infinite values in shade corrected image
+        % (value/0) to 0
+        acceptor_sc(isinf(acceptor_sc)) = 0;
+        acceptor_sc = uint16(acceptor_sc);
 
         % Clear Unecessary Variables
         acceptor(:,:,2:end) = [];

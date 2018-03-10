@@ -80,8 +80,12 @@ beta              = opt.beta;
 %% --- Specification of working directory --- %%
 % Select working directory where images to be processed are located and where new files will be saved
 disp('Select working directory to save images inside')
+prev_dir = cd;
 working_dir = uigetdir;
-cd(working_dir);
+if ~strcmp(prev_dir,working_dir)
+    status = movefile('run_opts.mat',working_dir); %#ok<NASGU>
+    cd(working_dir);
+end
 addpath(genpath(working_dir));
 
 

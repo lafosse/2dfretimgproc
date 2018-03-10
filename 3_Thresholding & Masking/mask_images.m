@@ -94,11 +94,11 @@ intensity_fret = zeros(num_images,3);  % empty matrix preallocated for speed (in
 intensity_acceptor = zeros(num_images,3);  % empty matrix preallocated for speed (intensity calculations for acceptor)
 
 % set number of sub-sections to process sub-total number of frames in '.tif' stack
-if num_images <= loop
+if num_images <= 3*loop
     num_images_sub = num_images;
     loop = 1;
 else
-    num_images_sub = round(num_images/loop);
+    num_images_sub = floor(num_images/loop);
 end
 
 for i = 1:loop

@@ -25,8 +25,10 @@ if strcmp(task,'Select Exclusion Criteria')
     while 1
         handle = photobleachGUI;
         waitfor(handle)
+        disp('waitfor called')
         if svd == 1
             if ~exist('donor_pbc.tif','file') || ~exist('fret_pbc.tif','file')
+                disp('into if cond')
                 % Construct a questdlg
                 choice = questdlg('Not all channels have had photobleach corrections applied or files aren"t named properly. Would you like to return to the photobleach correction GUI or continue with photobleach correction?', ...
                     'Warning - Not all necessary images found', ...
@@ -36,13 +38,15 @@ if strcmp(task,'Select Exclusion Criteria')
                     case 'Return to GUI'
                         continue
                     case 'Continue Processing without Photobleach Correction'
-                        disp('Ratioing will continue without photobleach correction...')
+                        disp('Ratioing will continue without photobleach correction (run_opts.mat updated)...')
                         load('run_opts.mat');
                         opts{1,1}.photobleach = 0;
                         save('run_opts.mat');
                         clear opts
                         break
                 end
+            else
+                break
             end
         else
             if ~exist('donor_pbc.tif','file') || ~exist('fret_pbc.tif','file') || ~exist('acceptor_pbc.tif','file')
@@ -55,13 +59,15 @@ if strcmp(task,'Select Exclusion Criteria')
                     case 'Return to GUI'
                         continue
                     case 'Continue Processing without Photobleach Correction'
-                        disp('Ratioing will continue without photobleach correction...')
+                        disp('Ratioing will continue without photobleach correction (run_opts.mat updated)...')
                         load('run_opts.mat');
                         opts{1,1}.photobleach = 0;
                         save('run_opts.mat');
                         clear opts
                         break
                 end
+            else
+                break
             end
         end
     end
